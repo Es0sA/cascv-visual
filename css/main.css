@@ -2997,19 +2997,19 @@ input {
 .cv-paper.ac-subtitle .cvp-entry-employer { color: var(--cv-accent) !important; }
 
 /* ============================================================
-   SUBTITLE / DATE / LOCATION STYLE — independently stylable
+   SUBTITLE / DATE / LOCATION STYLE: independently stylable
    ============================================================ */
-.cv-paper.ss-normal .cvp-entry-employer { font-weight: 400; font-style: italic; }
+.cv-paper.ss-normal .cvp-entry-employer { font-weight: 400 !important; font-style: normal !important; }
 .cv-paper.ss-bold   .cvp-entry-employer { font-weight: 700 !important; font-style: normal !important; }
-.cv-paper.ss-italic .cvp-entry-employer { font-style: italic !important; font-weight: 400 !important; }
+.cv-paper.ss-italic .cvp-entry-employer { font-weight: 400 !important; font-style: italic !important; }
 
-.cv-paper.ds-normal .cvp-entry-date { font-weight: 400; font-style: italic; }
+.cv-paper.ds-normal .cvp-entry-date { font-weight: 400 !important; font-style: normal !important; }
 .cv-paper.ds-bold   .cvp-entry-date { font-weight: 700 !important; font-style: normal !important; }
-.cv-paper.ds-italic .cvp-entry-date { font-style: italic !important; font-weight: 400 !important; }
+.cv-paper.ds-italic .cvp-entry-date { font-weight: 400 !important; font-style: italic !important; }
 
-.cv-paper.lc-normal .cvp-entry-location { font-weight: 400; font-style: italic; }
+.cv-paper.lc-normal .cvp-entry-location { font-weight: 400 !important; font-style: normal !important; }
 .cv-paper.lc-bold   .cvp-entry-location { font-weight: 700 !important; font-style: normal !important; }
-.cv-paper.lc-italic .cvp-entry-location { font-style: italic !important; font-weight: 400 !important; }
+.cv-paper.lc-italic .cvp-entry-location { font-weight: 400 !important; font-style: italic !important; }
 
 /* ============================================================
    SUBTITLE LINE — Same Line layout
@@ -3458,7 +3458,7 @@ input {
 .cvp-entry-meta {
   font-size: calc(var(--cv-entry-size) * 0.95) !important;
   color: #555;
-  font-style: italic;
+  font-style: normal;
   line-height: 1.4;
 }
 .cvp-entry-meta { margin: 0 0 3px; }
