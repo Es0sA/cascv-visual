@@ -1054,13 +1054,13 @@ const ALL_TEMPLATES = [
 // Templates not listed default to 'underline' (the original base look).
 const TEMPLATE_HEADING_DEFAULTS = {
   'condensed-rule': 'line',
-  'split-rule': 'frame',
+  'split-rule': 'topBottomLine',
   'editorial-rule': 'bar',
   'sage-line': 'bar',
   'blue-steel': 'line',
-  'clear-banner': 'underline',
+  'clear-banner': 'thinLine',
   'hunter-green': 'line',
-  'saffron-line': 'underline',
+  'saffron-line': 'thinLine',
   'atlantic-blue': 'line',
   'corporate-panel': 'line',
   'cobalt-edge': 'line',
@@ -1069,7 +1069,7 @@ const TEMPLATE_HEADING_DEFAULTS = {
   'framed-border': 'line',
 };
 function templateHeadingDefault(template) {
-  return TEMPLATE_HEADING_DEFAULTS[template] || 'underline';
+  return TEMPLATE_HEADING_DEFAULTS[template] || 'line';
 }
 
 /* ============================================================
@@ -1210,21 +1210,29 @@ function renderCustomizePanel() {
 
   // Each option's mini preview reproduces the actual decoration its
   // hs-* class draws (see the HEADING STYLES block in main.css), so
-  // what the button shows is what the CV gets — on every template.
+  // what the button shows is what the CV gets on every template.
   const headingStyles = [
-    {value:'underline', label:'Underline', deco:'border-bottom:1px solid #888;padding-bottom:2px;display:block'},
-    {value:'line',      label:'Line',      deco:'border-bottom:2px solid #888;padding-bottom:2px;display:block'},
-    {value:'short',     label:'Short',     deco:'border-bottom:2.5px solid #888;padding-bottom:2px;width:fit-content'},
-    {value:'dash',      label:'Dash',      deco:'background-image:linear-gradient(#888,#888);background-size:14px 2.5px;background-repeat:no-repeat;background-position:left bottom;padding-bottom:5px;display:block'},
-    {value:'frame',     label:'Frame',     deco:'border-top:1px solid #888;border-bottom:1px solid #888;padding:2px 0;display:block'},
-    {value:'boxed',     label:'Boxed',     deco:'background:#d9d9de;padding:2px 5px;border-radius:2px;display:block'},
-    {value:'bar',       label:'Bar',       deco:'border-left:2.5px solid #888;padding-left:5px;display:block'},
-    {value:'wavy',      label:'Wavy',      deco:`background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='4' viewBox='0 0 12 4'%3E%3Cpath d='M0 3 Q 3 0.5 6 3 T 12 3' fill='none' stroke='%23888' stroke-width='1.2'/%3E%3C/svg%3E&quot;);background-repeat:repeat-x;background-position:left bottom;padding-bottom:5px;width:fit-content`},
-    {value:'none',      label:'Plain',     deco:'display:block'},
+    {value:'line',                label:'Line',         deco:'border-bottom:2px solid #888;padding-bottom:2px;display:block'},
+    {value:'box',                 label:'Box',          deco:'background:rgba(128,128,128,0.22);padding:2px 5px;border-radius:2px;display:block;text-align:center'},
+    {value:'underline',           label:'Underline',    deco:'border-bottom:2.5px solid #888;padding-bottom:2px;width:fit-content'},
+    {value:'topBottomLine',       label:'Top & Bottom', deco:'border-top:1px solid #888;border-bottom:1px solid #888;padding:2px 0;display:block;text-align:center'},
+    {value:'thickShortUnderline', label:'Dash',         deco:'background-image:linear-gradient(#888,#888);background-size:18px 2.5px;background-repeat:no-repeat;background-position:left bottom;padding-bottom:5px;display:block'},
+    {value:'simple',              label:'Plain',        deco:'display:block'},
+    {value:'thinLine',            label:'Thin Line',    deco:'border-bottom:1px solid #888;padding-bottom:2px;display:block'},
+    {value:'zigZagLine',          label:'Zig-Zag',      deco:`background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath d='M4 0 L0 4 v2 L4 2 L8 6 V4 L4 0 Z' fill='%23888'/%3E%3C/svg%3E&quot;);background-repeat:repeat-x;background-position:left bottom;padding-bottom:7px;display:block`},
+    {value:'bar',                 label:'Left Bar',     deco:'border-left:2.5px solid #888;padding-left:5px;display:block'},
   ];
   let hsHtml = `<div class="hs-grid">`;
   headingStyles.forEach(hs => {
-    const active = cvSettings.headingStyle===hs.value?'active':'';
+    const isAct = (cvSettings.headingStyle === hs.value ||
+      (hs.value === 'line' && cvSettings.headingStyle === 'line') ||
+      (hs.value === 'underline' && cvSettings.headingStyle === 'short') ||
+      (hs.value === 'thickShortUnderline' && cvSettings.headingStyle === 'dash') ||
+      (hs.value === 'topBottomLine' && cvSettings.headingStyle === 'frame') ||
+      (hs.value === 'box' && cvSettings.headingStyle === 'boxed') ||
+      (hs.value === 'simple' && cvSettings.headingStyle === 'none') ||
+      (hs.value === 'zigZagLine' && cvSettings.headingStyle === 'wavy'));
+    const active = isAct ? 'active' : '';
     const inner = `<div class="hs-preview"><div class="hs-preview-label" style="${hs.deco}">SECTION</div><div class="hs-preview-lines"><div class="hs-preview-line"></div><div class="hs-preview-line"></div></div></div>`;
     hsHtml+=`<button class="hs-btn ${active}" onclick="setSetting('headingStyle','${hs.value}')" type="button">${inner}<span class="hs-btn-label">${hs.label}</span></button>`;
   });

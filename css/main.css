@@ -2521,76 +2521,65 @@ input {
 /* ---- Heading Style visual buttons ---- */
 .hs-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 7px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
 .hs-btn {
   border: 1.5px solid var(--border-input);
   border-radius: var(--radius-sm);
-  padding: 10px 10px 8px;
+  padding: 8px 6px 7px;
   cursor: pointer;
   background: var(--bg-elevated);
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  transition: border-color var(--transition), background var(--transition);
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition);
   font-family: var(--font-body);
+  min-height: 56px;
 }
-.hs-btn:hover { border-color: var(--text-muted); background: var(--bg-hover); }
-.hs-btn.active { border-color: var(--gold); background: var(--gold-muted); }
+.hs-btn:hover { border-color: var(--cyan); background: var(--bg-hover); box-shadow: 0 0 10px rgba(0,242,254,0.15); }
+.hs-btn.active { border-color: var(--cyan); background: rgba(0,242,254,0.12); box-shadow: 0 0 12px rgba(0,242,254,0.25); }
 
 .hs-preview {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  align-items: center;
+  gap: 2px;
 }
 .hs-preview-label {
   font-size: 7px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #888;
   line-height: 1;
+  text-align: center;
 }
 .hs-preview-bar {
   height: 1px;
   background: #888;
   width: 100%;
 }
-.hs-preview-lines { display: flex; flex-direction: column; gap: 2px; margin-top: 1px; }
+.hs-preview-lines { display: flex; flex-direction: column; gap: 2px; margin-top: 1px; width: 100%; align-items: center; }
 .hs-preview-line  { height: 2px; background: #ddd; border-radius: 1px; }
 .hs-preview-line:nth-child(1) { width: 90%; }
 .hs-preview-line:nth-child(2) { width: 75%; }
 
-.hs-btn.active .hs-preview-label  { color: var(--gold); }
-.hs-btn.active .hs-preview-bar    { background: var(--gold); }
-
-/* Underline style */
-.hs-underline-preview .hs-preview-label { border-bottom: 1px solid #888; padding-bottom: 2px; }
-/* Line style */
-.hs-line-preview .hs-preview-bar        { height: 1.5px; }
-/* Bold style */
-.hs-bold-preview .hs-preview-label      { font-weight: 900; color: #555; font-size: 8px; }
-.hs-bold-preview .hs-preview-bar        { display: none; }
-/* Bar style */
-.hs-bar-preview {
-  flex-direction: row;
-  align-items: stretch;
-  gap: 5px;
-}
-.hs-bar-preview .hs-preview-label { writing-mode: horizontal-tb; }
-.hs-bar-side { width: 2.5px; background: #888; border-radius: 1px; align-self: stretch; min-height: 20px; }
+.hs-btn.active .hs-preview-label  { color: var(--cyan); }
+.hs-btn.active .hs-preview-bar    { background: var(--cyan); }
 
 .hs-btn-label {
-  font-size: 0.68rem;
+  font-size: 0.65rem;
   font-weight: 600;
   color: var(--text-muted);
-  letter-spacing: 0.02em;
-  text-align: left;
+  letter-spacing: 0.01em;
+  text-align: center;
+  white-space: nowrap;
 }
-.hs-btn.active .hs-btn-label { color: var(--gold); }
+.hs-btn.active .hs-btn-label { color: var(--cyan); }
 
 /* ---- Range Slider ---- */
 .slider-row {
@@ -2765,48 +2754,47 @@ input {
    above (same specificity, but this block is later in the file).
    ============================================================ */
 
-/* Thin neutral line, full column width */
-.hs-underline .cvp-sec-heading {
-  border-bottom: 1px solid #999 !important;
-  padding-bottom: 2px;
-}
-
-/* Thicker accent line, full column width */
+/* Thick accent line, full column width (FlowCV 'line') */
 .hs-line .cvp-sec-heading {
+  width: 100%;
   border-bottom: 2px solid var(--cv-accent, #1a1a1a) !important;
   padding-bottom: 2px;
 }
 
-/* Thick short line hugging just the heading text */
+/* Thin neutral/accent line, full column width (FlowCV 'thinLine') */
+.hs-thinLine .cvp-sec-heading,
+.hs-thin-line .cvp-sec-heading {
+  width: 100%;
+  border-bottom: 1px solid #999 !important;
+  padding-bottom: 2px;
+}
+
+/* Text-hugging underline (FlowCV 'underline' / legacy 'short') */
+.hs-underline .cvp-sec-heading,
 .hs-short .cvp-sec-heading {
   width: fit-content;
   max-width: 100%;
-  border-bottom: 2.5px solid #999 !important;
+  border-bottom: 2.5px solid var(--cv-accent, #1a1a1a) !important;
   padding-bottom: 2px;
   padding-right: 2px;
 }
 
-/* Small fixed-width accent dash under the text (linear-gradient
-   rather than a pseudo-element so html2canvas captures it in the PDF
-   exactly as the preview shows it) */
+/* Short accent dash under heading (FlowCV 'thickShortUnderline' / legacy 'dash') */
+.hs-thickShortUnderline .cvp-sec-heading,
+.hs-thick-short-underline .cvp-sec-heading,
 .hs-dash .cvp-sec-heading {
   background-image: linear-gradient(var(--cv-accent, #1a1a1a), var(--cv-accent, #1a1a1a)) !important;
-  background-size: 24px 2.5px !important;
+  background-size: 2.6em 2.5px !important;
   background-repeat: no-repeat !important;
   background-position: left bottom !important;
   padding-bottom: 6px;
 }
 
-/* Lines above AND below, hugging the heading text's own width (not
-   the full column): a full-width frame only reads as centered
-   framing when the text happens to be centered; with left-aligned
-   text a full-width frame leaves a long empty line trailing off past
-   the actual word, which looks like a mistake rather than a style. */
+/* Full-width top and bottom border (FlowCV 'topBottomLine' / legacy 'frame') */
+.hs-topBottomLine .cvp-sec-heading,
+.hs-top-bottom-line .cvp-sec-heading,
 .hs-frame .cvp-sec-heading {
-  width: fit-content;
-  max-width: 100%;
-  margin-left: auto;
-  margin-right: auto;
+  width: 100%;
   text-align: center;
   border-top: 1px solid #999 !important;
   border-bottom: 1px solid #999 !important;
@@ -2814,18 +2802,25 @@ input {
   padding-bottom: 3px;
 }
 
-/* Heading sits on a soft filled band, centered as its own pill/badge
-   rather than a full-width bar behind left-aligned text (FlowCV's
-   reference look). */
+/* Full-width tinted accent background box (FlowCV 'box' / legacy 'boxed') */
+.hs-box .cvp-sec-heading,
 .hs-boxed .cvp-sec-heading {
-  width: fit-content;
-  max-width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
-  background: #efeff1 !important;
-  padding: 3px 7px !important;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.06) !important;
+  padding: 4px 8px !important;
   border-radius: 2px;
+  text-align: center;
+}
+
+/* Full-width repeating sawtooth / zigzag banner (FlowCV 'zigZagLine' / legacy 'wavy') */
+.hs-zigZagLine .cvp-sec-heading,
+.hs-zigzag .cvp-sec-heading,
+.hs-wavy .cvp-sec-heading {
+  width: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath d='M4 0 L0 4 v2 L4 2 L8 6 V4 L4 0 Z' fill='%23888'/%3E%3C/svg%3E") !important;
+  background-repeat: repeat-x !important;
+  background-position: left bottom !important;
+  padding-bottom: 8px;
 }
 
 /* Vertical bar on the left */
@@ -2834,31 +2829,25 @@ input {
   padding-left: 7px !important;
 }
 
-/* Wavy underline under the text (SVG background tile, again so the
-   PDF capture matches the preview — text-decoration:wavy renders
-   unreliably through html2canvas) */
-.hs-wavy .cvp-sec-heading {
-  width: fit-content;
-  max-width: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='4' viewBox='0 0 12 4'%3E%3Cpath d='M0 3 Q 3 0.5 6 3 T 12 3' fill='none' stroke='%23888' stroke-width='1.2'/%3E%3C/svg%3E") !important;
-  background-repeat: repeat-x !important;
-  background-position: left bottom !important;
-  padding-bottom: 6px;
-  padding-right: 2px;
+/* Plain text, no decoration (FlowCV 'simple' / legacy 'none') */
+.hs-simple .cvp-sec-heading,
+.hs-none .cvp-sec-heading {
+  border: none !important;
+  padding-bottom: 1px;
 }
 
-/* Plain text, no decoration (base border:none reset already applies) */
-.hs-none .cvp-sec-heading { padding-bottom: 1px; }
-
-/* Inside a sidebar template's colored panel (white heading text), the
-   boxed band and the dash/wavy pigment need light-on-dark variants or
-   they'd be invisible against the panel color. */
-.hs-boxed .cvp-header-sections .cvp-sec-heading { background: rgba(255,255,255,0.18) !important; }
+/* Inside a sidebar template's colored panel (white heading text) */
+.hs-box .cvp-header-sections .cvp-sec-heading,
+.hs-boxed .cvp-header-sections .cvp-sec-heading {
+  background: rgba(255, 255, 255, 0.18) !important;
+}
+.hs-thickShortUnderline .cvp-header-sections .cvp-sec-heading,
 .hs-dash .cvp-header-sections .cvp-sec-heading {
   background-image: linear-gradient(rgba(255,255,255,0.75), rgba(255,255,255,0.75)) !important;
 }
+.hs-zigZagLine .cvp-header-sections .cvp-sec-heading,
 .hs-wavy .cvp-header-sections .cvp-sec-heading {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='4' viewBox='0 0 12 4'%3E%3Cpath d='M0 3 Q 3 0.5 6 3 T 12 3' fill='none' stroke='%23ffffff' stroke-opacity='0.75' stroke-width='1.2'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath d='M4 0 L0 4 v2 L4 2 L8 6 V4 L4 0 Z' fill='%23ffffff' fill-opacity='0.75'/%3E%3C/svg%3E") !important;
 }
 
 /* ---- Legacy values kept so CVs saved before the picker was
@@ -2992,13 +2981,17 @@ input {
 .cv-paper.ac-title    .cvp-jobtitle    { color: var(--cv-accent) !important; }
 .cv-paper.ac-headings .cvp-sec-heading { color: var(--cv-accent) !important; }
 .cv-paper.ac-line     .cvp-divider     { border-color: var(--cv-accent) !important; }
-.cv-paper.ac-line.hs-underline .cvp-sec-heading { border-color: var(--cv-accent) !important; }
-.cv-paper.ac-line.hs-line      .cvp-sec-heading { border-color: var(--cv-accent) !important; }
-.cv-paper.ac-line.hs-short     .cvp-sec-heading { border-color: var(--cv-accent) !important; }
-.cv-paper.ac-line.hs-frame     .cvp-sec-heading { border-color: var(--cv-accent) !important; }
-.cv-paper.ac-line.hs-bar       .cvp-sec-heading { border-left-color: var(--cv-accent) !important; }
-.cv-paper.ac-line.hs-double    .cvp-sec-heading { border-color: var(--cv-accent) !important; }
-.cv-paper.ac-line.hs-dotted    .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-line          .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-thinLine      .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-thin-line     .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-underline     .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-short         .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-topBottomLine .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-top-bottom-line .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-frame         .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-bar           .cvp-sec-heading { border-left-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-double        .cvp-sec-heading { border-color: var(--cv-accent) !important; }
+.cv-paper.ac-line.hs-dotted        .cvp-sec-heading { border-color: var(--cv-accent) !important; }
 .cv-paper.ac-dates    .cvp-entry-date,
 .cv-paper.ac-dates    .cvp-entry-meta  { color: var(--cv-accent) !important; }
 .cv-paper.ac-subtitle .cvp-entry-employer { color: var(--cv-accent) !important; }

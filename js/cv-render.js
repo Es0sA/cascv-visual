@@ -53,7 +53,7 @@ const DEFAULTS = {
   subtitleLine:'next', paperFormat:'A4', bodyFont:'Calibri, Arial, sans-serif',
   nameFont:'inherit', baseFontSize:11, nameFontSize:19, titleFontSize:12,
   headingFontSize:10, entryFontSize:11, lineHeight:1.55, letterSpacing:0,
-  sectionSpacing:11, marginLR:13, marginTB:11, headingStyle:'underline',
+  sectionSpacing:11, marginLR:13, marginTB:11, headingStyle:'line',
   headingCase:'upper', subtitleStyle:'normal', dateStyle:'normal', locationStyle:'normal', listStyle:'bullet',
   dateFormat:'Month YYYY', showDuration:false, skillStyle:'text', showSectionIcons:false,
   accentColor:'#1a1a1a', colorBg:'#ffffff',
