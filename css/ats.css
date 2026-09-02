@@ -69,8 +69,11 @@
 
 /* ---- Hero ---- */
 .ats-hero {
-  background: linear-gradient(135deg, #0D1117 0%, #161B27 100%);
-  padding: 64px 24px 72px;
+  background: 
+    radial-gradient(ellipse at 50% -20%, rgba(223, 181, 88, 0.16) 0%, transparent 60%),
+    radial-gradient(circle at 80% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+    #080A0F;
+  padding: 80px 24px 84px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -79,17 +82,18 @@
 .ats-hero::before {
   content: '';
   position: absolute;
-  top: -40%;
+  top: -50%;
   left: 50%;
   transform: translateX(-50%);
-  width: 600px;
-  height: 400px;
-  background: radial-gradient(ellipse, rgba(201,168,76,0.07) 0%, transparent 70%);
+  width: 750px;
+  height: 500px;
+  background: radial-gradient(ellipse, rgba(223, 181, 88, 0.12) 0%, transparent 70%);
+  filter: blur(40px);
   pointer-events: none;
 }
 
 .ats-hero-inner {
-  max-width: 680px;
+  max-width: 720px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -97,31 +101,34 @@
 
 .ats-badge {
   display: inline-block;
-  background: rgba(201,168,76,0.12);
-  color: #C9A84C;
-  border: 1px solid rgba(201,168,76,0.25);
+  background: rgba(223, 181, 88, 0.12);
+  color: #DFB558;
+  border: 1px solid rgba(223, 181, 88, 0.35);
   font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  padding: 5px 14px;
-  border-radius: 20px;
-  margin-bottom: 22px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  margin-bottom: 24px;
+  box-shadow: 0 0 16px rgba(223, 181, 88, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .ats-title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-size: clamp(2.2rem, 4.5vw, 3.2rem);
   font-weight: 700;
-  color: #E8EAF0;
-  line-height: 1.25;
+  color: #F0F2F7;
+  line-height: 1.2;
   margin-bottom: 18px;
+  letter-spacing: -0.01em;
 }
 
 .ats-subtitle {
-  font-size: 1rem;
-  color: #8B93AA;
+  font-size: 1.05rem;
+  color: #949EB5;
   line-height: 1.7;
-  max-width: 560px;
+  max-width: 580px;
   margin: 0 auto;
 }
 
@@ -212,20 +219,30 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #C9A84C;
-  color: #0D1117;
+  background: linear-gradient(135deg, #FBE5AC 0%, #DFB558 50%, #B88B2A 100%);
+  color: #080A0F;
   font-family: 'DM Sans', sans-serif;
   font-size: 0.9375rem;
   font-weight: 700;
-  padding: 13px 26px;
+  letter-spacing: 0.01em;
+  padding: 13px 28px;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 180ms, transform 180ms;
+  box-shadow: 0 4px 20px rgba(223, 181, 88, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 160ms cubic-bezier(0.32, 0.72, 0, 1), box-shadow 160ms ease-out, filter 160ms ease-out;
 }
 
-.ats-check-btn:hover { background: #D4B860; }
-.ats-check-btn:active { transform: scale(0.99); }
+.ats-check-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(223, 181, 88, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  filter: brightness(1.04);
+}
+
+.ats-check-btn:active {
+  transform: scale(0.97) translateY(0);
+  box-shadow: 0 2px 8px rgba(223, 181, 88, 0.2);
+}
 
 /* ---- Results ---- */
 .ats-results {
@@ -248,17 +265,23 @@
 /* Score card */
 .ats-score-card {
   background: white;
-  border-radius: 14px;
-  padding: 28px 20px;
+  border-radius: 18px;
+  padding: 32px 24px;
   text-align: center;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  box-shadow: 0 12px 36px -6px rgba(0,0,0,0.09), 0 0 0 1px rgba(0,0,0,0.04);
+  transition: transform 200ms var(--ease-spring), box-shadow 200ms ease-out;
+}
+
+.ats-score-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 44px -8px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.04);
 }
 
 .ats-score-wrap {
   position: relative;
-  width: 140px;
-  height: 140px;
-  margin: 0 auto 12px;
+  width: 144px;
+  height: 144px;
+  margin: 0 auto 14px;
 }
 
 .ats-score-ring {
@@ -269,17 +292,18 @@
 
 .ats-ring-bg {
   fill: none;
-  stroke: #eef0f5;
+  stroke: #edf0f6;
   stroke-width: 10;
 }
 
 .ats-ring-bar {
   fill: none;
-  stroke: #C9A84C;
+  stroke: #DFB558;
   stroke-width: 10;
   stroke-linecap: round;
-  transition: stroke-dashoffset 800ms cubic-bezier(0.4, 0, 0.2, 1),
-              stroke 400ms;
+  filter: drop-shadow(0 2px 8px rgba(223, 181, 88, 0.45));
+  transition: stroke-dashoffset 900ms cubic-bezier(0.32, 0.72, 0, 1),
+              stroke 400ms ease-out;
 }
 
 .ats-score-inner {
