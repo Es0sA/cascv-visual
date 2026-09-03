@@ -136,13 +136,25 @@ cvPaper.innerHTML = '<p class="cv-loading-text">Loading CV…</p>';
    ============================================================ */
 
 // Single source of truth for what gets sent to the backend, used by
-// both the Download PDF button and the mobile Preview modal so they
-// can never visually disagree (see openMobilePreview below).
+// both the Download PDF button and mobile preview so they can never visually disagree.
+// When paginated layout is active, exports the exact .cv-page sheets rendered on screen
+// with interactive page badges removed, guaranteeing 100% visual parity with preview.
 function buildBackendExportPayload() {
+  const isPaginated = isPaginatedLayout();
+  let exportHTML = '';
+  if (isPaginated) {
+    const clone = cvPaper.cloneNode(true);
+    clone.querySelectorAll('.cv-page-badge').forEach(b => b.remove());
+    exportHTML = clone.innerHTML;
+  } else {
+    exportHTML = buildCVHTML(cvData.parsed);
+  }
+
   return {
     outerClassName: computeCvPaperClassString(false),
     styleAttr:      cvPaper.getAttribute('style') || '',
-    innerHTML:      buildCVHTML(cvData.parsed),
+    innerHTML:      exportHTML,
+    isPaginated:    isPaginated,
     paperFormat:    cvSettings.paperFormat === 'Letter' ? 'Letter' : 'A4',
     filename:       cvData.name || 'CV',
     marginLR:       cvSettings.marginLR,
