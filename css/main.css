@@ -2095,6 +2095,7 @@ input {
     flex-direction: column;
     overflow: visible;
     height: auto;
+    padding-top: 0;
   }
 
   .editor-left {
@@ -2121,25 +2122,24 @@ input {
     max-width: 140px;
   }
 
-  /* .editor-header-right holds six controls (undo, redo, Reimport,
-     Saved, Download PDF) at a fixed flex-shrink:0, so on a phone-width
-     screen their combined natural width is wider than the viewport.
-     With no wrapping, `justify-content: space-between` still shoves
-     that whole group as far right as it can go, which is further left
-     than where the back button/name already end, so they visually
-     overlap. Letting the header wrap moves the group onto its own
-     line, fixing the overlap, but a wrapped flex item still sizes to
-     its own content width by default rather than the row's full
-     width, so the group (~450px of buttons) stayed wider than the
-     390px viewport and kept the whole page horizontally scrollable.
-     Forcing it to `width: 100%` when wrapped gives it a bounded box
-     to wrap its own buttons inside, via its own flex-wrap, onto a
-     genuine second line instead of overflowing off-screen. */
+  /* On mobile, unpin the floating island into a full-width stationary header
+     so it never floats over or obstructs the resume canvas below. */
   .editor-header {
+    position: static;
+    top: auto;
+    left: auto;
+    right: auto;
+    width: 100%;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
     flex-wrap: wrap;
     height: auto;
     min-height: 56px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     row-gap: 8px;
   }
 
