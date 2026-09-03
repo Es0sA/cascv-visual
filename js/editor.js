@@ -1248,7 +1248,7 @@ function renderCustomizePanel() {
     custRow('Date Format',    toggleGroup([{label:'Month YYYY',value:'Month YYYY'},{label:'Mon YYYY',value:'Mon YYYY'},{label:'MM/YYYY',value:'MM/YYYY'},{label:'MM.YYYY',value:'MM.YYYY'},{label:'YYYY',value:'YYYY'}],'dateFormat')) +
     custRow('Duration',`<label class="cust-toggle-row"><input type="checkbox" ${cvSettings.showDuration?'checked':''} onchange="toggleBool('showDuration',this.checked)"><span class="cust-toggle-slider"></span><span class="cust-toggle-label">Show job duration (e.g. 2 yrs 3 mos)</span></label>`) +
     custRow('Section Icons',`<label class="cust-toggle-row"><input type="checkbox" ${cvSettings.showSectionIcons?'checked':''} onchange="toggleBool('showSectionIcons',this.checked)"><span class="cust-toggle-slider"></span><span class="cust-toggle-label">Show an icon next to each section heading (pick each one in the Edit tab)</span></label>`) +
-    custRow('Skill Display',  toggleGroup([{label:'Text',value:'text'},{label:'Bars',value:'bars'},{label:'Dots',value:'dots'}],'skillStyle'));
+    custRow('Skill Display',  toggleGroup([{label:'Rows',value:'rows'},{label:'Grid',value:'grid'},{label:'Bubbles',value:'bubbles'},{label:'Inline',value:'inline'}],'skillStyle'));
 
   let colorGrid=`<div class="color-grid">`;
   ACCENT_COLORS.forEach(c=>{

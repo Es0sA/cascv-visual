@@ -55,7 +55,7 @@ const DEFAULTS = {
   headingFontSize:10, entryFontSize:11, lineHeight:1.55, letterSpacing:0,
   sectionSpacing:11, marginLR:13, marginTB:11, headingStyle:'line',
   headingCase:'upper', subtitleStyle:'normal', dateStyle:'normal', locationStyle:'normal', listStyle:'bullet',
-  dateFormat:'Month YYYY', showDuration:false, skillStyle:'text', showSectionIcons:false,
+  dateFormat:'Month YYYY', showDuration:false, skillStyle:'rows', showSectionIcons:false,
   accentColor:'#1a1a1a', colorBg:'#ffffff',
   colorSidebarBg:'#f0f4f8', colorText:'#1a1a1a', accentName:false,
   accentTitle:false, accentHeadings:true, accentLine:true, accentDates:false,
@@ -369,7 +369,9 @@ function renderSectionPreview(sec, i) {
     body = formatLines(sec.lines || []);
   }
 
-  return `<div class="cvp-section" id="preview-sec-${i}">
+  const skillSectionClass = (stype==='skills'||stype==='custom-skill')
+    ? ` cvp-section-skill-${cvSettings.skillStyle||'text'}` : '';
+  return `<div class="cvp-section${skillSectionClass}" id="preview-sec-${i}">
     <div class="cvp-sec-heading">${sectionHeadingInnerHTML(name, def.icon)}</div>
     <div class="cvp-sec-content" id="preview-content-${i}">${body}</div>
   </div>`;
@@ -467,11 +469,25 @@ function renderEntryHTML(entry, stype) {
   }
 
   if (stype==='skills'||stype==='custom-skill') {
-    const skill = entry.skill||'';
-    const info  = entry.info||'';
-    const level = entry.level||'';
-    if (skill&&info) html += `<p class="cvp-line"><strong class="cvp-cat">${escapeHtml(skill)}:</strong> ${mdLine(info)}</p>`;
-    else if (skill)  html += `<p class="cvp-line"><strong class="cvp-cat">${escapeHtml(skill)}</strong>${level?' — '+level:''}</p>`;
+    const skill      = entry.skill||'';
+    const info       = entry.info||'';
+    if (!skill) return html;
+    const skillStyle = cvSettings.skillStyle || 'rows';
+    // Build the display text: "Skill: Info" or just "Skill"
+    const label = info ? `<strong class="cvp-cat">${escapeHtml(skill)}:</strong> ${mdLine(info)}` : `<strong class="cvp-cat">${escapeHtml(skill)}</strong>`;
+    if (skillStyle === 'bubbles') {
+      // Pill / bubble badge: section wrapper groups them into a flex-wrap row
+      html += `<span class="cvp-skill-bubble">${escapeHtml(skill)}${info ? ': '+escapeHtml(info) : ''}</span>`;
+    } else if (skillStyle === 'inline') {
+      // Inline chips separated by a bullet: section wrapper flows them with wrap
+      html += `<span class="cvp-skill-inline">${escapeHtml(skill)}${info ? ': '+escapeHtml(info) : ''}</span>`;
+    } else if (skillStyle === 'grid') {
+      // Grid cell: the section wrapper lays them out in 2 columns
+      html += `<span class="cvp-skill-grid-item">${label}</span>`;
+    } else {
+      // 'rows' (default): traditional one-per-line paragraphs
+      html += `<p class="cvp-line">${label}</p>`;
+    }
     return html;
   }
 
