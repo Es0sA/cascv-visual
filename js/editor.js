@@ -2054,6 +2054,7 @@ function buildLayoutUnits(parsed) {
 // lets a page run a hair over its target height, it just grows slightly
 // rather than clipping content.
 const PAGE_FIT_TOLERANCE_MM = 1;
+const BANNER_TEMPLATES = ['hunter-green', 'corporate', 'silver-banner', 'blue-steel', 'clear-banner'];
 
 function measureAndPaginate(units, pw, ph, marginLR, marginTB, classString, sectionMeta) {
   const probe = document.createElement('div');
@@ -2083,16 +2084,22 @@ function measureAndPaginate(units, pw, ph, marginLR, marginTB, classString, sect
   const usablePageHeightPx = ph * pxPerMm + PAGE_FIT_TOLERANCE_MM * pxPerMm;
 
   // Measure by actually rendering each candidate page through
-  // unitsToPageHTML — the exact same .cvp-section/.cvp-sec-heading/
-  // .cvp-sec-content wrapper markup the final render uses — rather
+  // unitsToPageHTML: the exact same .cvp-section/.cvp-sec-heading/
+  // .cvp-sec-content wrapper markup the final render uses: rather
   // than summing bare unit heights in isolation. Summing individual
   // units missed the wrapper elements' own margins/padding/section
   // gaps, which under-predicted real height enough to let content
   // silently overflow a page's true limit.
+  const isBanner = BANNER_TEMPLATES.includes(cvSettings.template);
   const pages = [[]];
   units.forEach(u => {
     const pageIdx = pages.length - 1;
     const candidate = pages[pageIdx].concat([u]);
+    if (isBanner && pageIdx > 0) {
+      probe.style.paddingTop = `${marginTB}mm`;
+    } else {
+      probe.style.paddingTop = '';
+    }
     probe.innerHTML = unitsToPageHTML(candidate, sectionMeta, pageIdx);
     const h = probe.getBoundingClientRect().height;
     if (h > usablePageHeightPx && pages[pageIdx].length > 0) {
@@ -2106,7 +2113,7 @@ function measureAndPaginate(units, pw, ph, marginLR, marginTB, classString, sect
   // area at the bottom of a page, with a whole small trailing section
   // (e.g. a 2-line Achievements section) stranded alone on the next
   // page. Measured directly against a real downloaded PDF: the gap was
-  // ~38mm, more than double what that trailing section needed — too
+  // ~38mm, more than double what that trailing section needed. Too
   // large to be the sub-pixel measurement noise PAGE_FIT_TOLERANCE_MM
   // absorbs, and not reproducible identically across browsers (this
   // exact CV/settings paginated differently in this project's
@@ -2125,6 +2132,11 @@ function measureAndPaginate(units, pw, ph, marginLR, marginTB, classString, sect
   // trailing pages collapsing into one) without skipping a pair.
   for (let i = pages.length - 1; i > 0; i--) {
     const combined = pages[i - 1].concat(pages[i]);
+    if (isBanner && (i - 1) > 0) {
+      probe.style.paddingTop = `${marginTB}mm`;
+    } else {
+      probe.style.paddingTop = '';
+    }
     probe.innerHTML = unitsToPageHTML(combined, sectionMeta, i - 1);
     const combinedHeight = probe.getBoundingClientRect().height;
     if (combinedHeight <= usablePageHeightPx) {

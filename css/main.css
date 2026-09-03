@@ -3525,6 +3525,22 @@ input {
 .cv-paper.t-saffron-line .cvp-sec-heading { color: #c08020 !important; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 .cv-paper.t-saffron-line .cvp-entry-title { color: #8a5a10; }
 
+/* Multi-page banner templates: only Page 1 (which holds .cvp-header) has padding-top: 0
+   for the full-bleed banner. Subsequent pages must retain normal top padding so content
+   is not flush with the sheet top edge. */
+.cv-pages-holder > .cv-page.t-silver-banner:not(:first-child),
+.cv-pages-holder > .cv-page.t-corporate:not(:first-child),
+.cv-pages-holder > .cv-page.t-blue-steel:not(:first-child),
+.cv-pages-holder > .cv-page.t-clear-banner:not(:first-child),
+.cv-pages-holder > .cv-page.t-hunter-green:not(:first-child),
+.cv-page.t-silver-banner:not(:has(.cvp-header)),
+.cv-page.t-corporate:not(:has(.cvp-header)),
+.cv-page.t-blue-steel:not(:has(.cvp-header)),
+.cv-page.t-clear-banner:not(:has(.cvp-header)),
+.cv-page.t-hunter-green:not(:has(.cvp-header)) {
+  padding-top: var(--cv-margin-tb, 44px) !important;
+}
+
 /* ============================================================
    SIDEBAR TEMPLATES — Left-column header, right content
    ============================================================ */
