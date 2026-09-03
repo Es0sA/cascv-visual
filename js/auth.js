@@ -7,11 +7,30 @@ import { auth } from "./firebase-init.js";
 import {
   signInWithEmailAndPassword,
   setPersistence,
-  browserLocalPersistence
+  browserLocalPersistence,
+  browserSessionPersistence,
+  inMemoryPersistence
 } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
 
-// Ensure local storage persistence for reliable cross-page sessions
-setPersistence(auth, browserLocalPersistence).catch(() => {});
+// Multi-tiered persistence fallback for Private Browsing / Incognito mode
+async function configurePersistence() {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (errLocal) {
+    try {
+      await setPersistence(auth, browserSessionPersistence);
+    } catch (errSession) {
+      try {
+        await setPersistence(auth, inMemoryPersistence);
+      } catch {
+        // Fall back to default
+      }
+    }
+  }
+}
+
+// Ensure initial persistence setup
+configurePersistence().catch(() => {});
 
 // If already signed in, wait until auth state is confirmed before redirecting
 auth.authStateReady().then(() => {
@@ -45,7 +64,7 @@ if (togglePwd) {
 async function handleSignIn(e) {
   if (e) e.preventDefault();
 
-  const email    = (usernameInp.value || '').trim();
+  const email    = (usernameInp.value || '').trim().toLowerCase();
   const password = passwordInp.value || '';
 
   errorMsg.textContent = '';
@@ -59,7 +78,7 @@ async function handleSignIn(e) {
   btnText.textContent = 'Signing in...';
 
   try {
-    await setPersistence(auth, browserLocalPersistence);
+    await configurePersistence();
     await signInWithEmailAndPassword(auth, email, password);
     window.location.replace('dashboard.html');
   } catch (err) {
@@ -73,6 +92,8 @@ async function handleSignIn(e) {
       message = 'Please enter a valid email address.';
     } else if (err.code === 'auth/user-disabled') {
       message = 'This account has been disabled.';
+    } else if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+      message = 'Incorrect email or password. Please verify your credentials and try again.';
     }
     errorMsg.textContent = message;
     passwordInp.value = '';
