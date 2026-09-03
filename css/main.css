@@ -1480,7 +1480,9 @@ input {
 .editor-right {
   flex: 1;
   overflow-y: scroll;          /* always-on scrollbar = no layout shift */
-  overflow-x: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
   background-color: #02050D;
   background-image: 
     radial-gradient(ellipse at 50% 25%, rgba(0, 242, 254, 0.09) 0%, transparent 60%),
@@ -1488,43 +1490,32 @@ input {
     linear-gradient(rgba(0, 242, 254, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 242, 254, 0.035) 1px, transparent 1px);
   background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
-  padding: 36px 0 90px;        /* vertical only, horizontal centering via flex */
+  padding: 36px 16px 90px 16px;
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
   align-items: flex-start;
 }
 
 /* ============================================================
-   CV PAPER — Live Preview Document
+   CV PAPER: Live Preview Document
    ============================================================ */
 
-/* CV paper wrapper — needed for page break overlay positioning.
-   Sizing/centering is handled entirely by the .editor-right flex
-   parent (justify-content: center) — no competing width/margin
-   rules here, which is what caused uneven left/right gaps. */
+/* CV paper wrapper: needed for page break overlay positioning.
+   margin: 0 auto centers when fitting, aligns safely to 0 on overflow. */
 .cv-paper-wrap {
   position: relative;
   flex-shrink: 0;
-  width: min(var(--cv-paper-w, 210mm), 100%);
+  width: var(--cv-paper-w, 210mm);
+  min-width: var(--cv-paper-w, 210mm);
+  margin: 0 auto;
 }
 
-/* Size the live on-screen preview at the SAME true physical mm width
-   as the PDF export clone (editor.js's applySettings sets --cv-paper-w
-   on this wrap element), instead of a smaller fixed screen-friendly px
-   box. Fixed-px text set at a given size used to wrap inside a
-   narrower on-screen box than the true-width PDF box, making it look
-   proportionally bigger on screen than in the actual downloaded PDF —
-   this keeps the two visually consistent. fitPaperZoom() (editor.js)
-   shrinks this true-size box back down via CSS zoom whenever the
-   available panel is too narrow to fit it, so this doesn't cause
-   overflow on smaller screens. This selector has higher specificity
-   (two classes) than the base `.cv-paper` rule used for template
-   thumbnails, so it wins regardless of source order without needing to
-   touch that rule. */
+/* Size the live on-screen preview at the true physical mm width
+   so text wrap and line lengths are 100% identical to the PDF export. */
 .cv-paper-wrap .cv-paper {
-  width: 100%;
+  width: var(--cv-paper-w, 210mm);
+  min-width: var(--cv-paper-w, 210mm);
   max-width: var(--cv-paper-w, 210mm);
-  min-width: 0;
 }
 
 /* ---- Real pagination: #cvPaper becomes a plain stacking wrapper for
@@ -4937,22 +4928,25 @@ body.panel-resizing iframe {
 .editor-right {
   flex: 1;
   overflow-y: scroll;
-  overflow-x: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
   background: #030712;
   background-image: 
     radial-gradient(circle at 50% 12%, rgba(0, 242, 254, 0.08) 0%, transparent 60%),
     radial-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px);
   background-size: 100% 100%, 28px 28px;
-  padding: 36px 0 100px 0;
+  padding: 36px 16px 100px 16px;
   display: flex;
-  justify-content: center;
+  justify-content: safe center;
   align-items: flex-start;
   position: relative;
 }
 
 .cv-page {
   position: relative;
-  width: 100%;
+  width: var(--cv-paper-w, 210mm);
+  min-width: var(--cv-paper-w, 210mm);
   max-width: var(--cv-paper-w, 210mm);
   min-height: var(--cv-paper-h, 297mm);
   box-sizing: border-box;
@@ -5175,7 +5169,11 @@ body.panel-resizing iframe {
     display: flex !important;
     width: 100% !important;
     min-height: calc(100vh - 120px) !important;
-    padding: 16px 0 90px 0 !important;
+    padding: 16px 16px 90px 16px !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x pan-y !important;
   }
 
   body:not(.mobile-view-preview) .editor-right {

@@ -2796,8 +2796,8 @@ function fitPaperZoom() {
 
   wrap.style.zoom  = 1;
   wrap.style.width = 'var(--cv-paper-w, 210mm)';
-  const availW   = right.clientWidth - 48; // accounting for canvas padding
-  const naturalW = wrap.scrollWidth || wrap.offsetWidth;
+  const availW   = Math.max(200, (right.clientWidth || window.innerWidth) - 32);
+  const naturalW = wrap.scrollWidth || wrap.offsetWidth || 794;
 
   let scale = 1;
   if (_canvasManualZoom !== null) {
