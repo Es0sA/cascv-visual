@@ -185,54 +185,16 @@ function downloadCV(id) {
   cvData.customSectionIcon = cvData.customSectionIcon || {};
   cvSettings = mergeCvSettings(cv.settings);
 
-  const cvHtml = buildCVHTML(cvData.parsed || {});
-  const outerClassName = computeCvPaperClassString(false);
-
-  const isLetterFormat = cvSettings.paperFormat === 'Letter';
-  const styleProps = {
-    '--cv-paper-w':       isLetterFormat ? '215.9mm' : '210mm',
-    '--cv-paper-h':       isLetterFormat ? '279.4mm' : '297mm',
-    '--cv-accent':        cvSettings.accentColor,
-    '--cv-base':          cvSettings.baseFontSize    + 'px',
-    '--cv-name-size':     cvSettings.nameFontSize    + 'px',
-    '--cv-name-font':     (cvSettings.nameFont && cvSettings.nameFont !== 'inherit') ? cvSettings.nameFont : cvSettings.bodyFont,
-    '--cv-title-size':    cvSettings.titleFontSize   + 'px',
-    '--cv-heading-size':  cvSettings.headingFontSize + 'px',
-    '--cv-entry-size':    cvSettings.entryFontSize   + 'px',
-    '--cv-section-gap':   cvSettings.sectionSpacing  + 'px',
-    '--cv-margin-lr':     cvSettings.marginLR        + 'mm',
-    '--cv-margin-tb':     cvSettings.marginTB        + 'mm',
-    '--cv-letter-spacing':cvSettings.letterSpacing   + 'em',
-    '--cv-col-width':     cvSettings.twoColWidth     + '%',
-    '--cv-bg':            cvSettings.colorBg,
-    '--cv-sidebar-bg':    cvSettings.sidebarBgEnabled ? (cvSettings.colorSidebarBg || '#f0f4f8') : 'transparent',
-    '--cv-text':          cvSettings.colorText,
-    '--cv-photo-zoom':    cvSettings.photoZoom,
-  };
-  const styleAttr = `width:${isLetterFormat ? '215.9mm' : '210mm'};min-height:${isLetterFormat ? '279.4mm' : '297mm'};` +
-    `background:${cvSettings.colorBg};color:${cvSettings.colorText};font-family:${cvSettings.bodyFont};` +
-    `font-size:${cvSettings.baseFontSize}px;line-height:${cvSettings.lineHeight};letter-spacing:${cvSettings.letterSpacing}em;` +
-    `box-sizing:border-box;` +
-    Object.entries(styleProps).map(([k, v]) => `${k}:${v}`).join(';');
-
-  const btn = event.target.closest('button');
+  const btn = (typeof event !== 'undefined' && event && event.target) ? event.target.closest('button') : null;
   if (btn) { btn.textContent = '⏳ Generating…'; btn.disabled = true; }
 
   (async () => {
     try {
-      await casGeneratePdf({
-        outerClassName,
-        styleAttr,
-        innerHTML: cvHtml,
-        paperFormat: cvSettings.paperFormat === 'Letter' ? 'Letter' : 'A4',
-        filename: cv.name || 'CV',
-        marginLR: cvSettings.marginLR,
-        marginTB: cvSettings.marginTB,
-        colorBg: cvSettings.colorBg,
-      });
+      const payload = await buildBackendExportPayload();
+      await casGeneratePdf(payload);
     } catch (err) {
       console.error('PDF generation failed:', err);
-      alert('PDF generation failed. Please try again — if this keeps happening, let Cas know.');
+      alert('PDF generation failed. Please try again (if this keeps happening, let Cas know).');
     } finally {
       if (btn) { btn.textContent = 'Download'; btn.disabled = false; }
     }

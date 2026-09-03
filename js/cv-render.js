@@ -765,3 +765,522 @@ function buildCVHTML(parsed) {
   }
   return html;
 }
+
+function isCursiveOrDecorativeFont(fontStr) {
+  if (!fontStr) return false;
+  const s = String(fontStr).toLowerCase();
+  return s.includes('cursive') || s.includes('parisienne') || s.includes('pacifico') || s.includes('caveat') || s.includes('bungee');
+}
+
+function getCvStyleProps(settings) {
+  const s = settings || cvSettings || {};
+  const isLetter = s.paperFormat === 'Letter';
+  const targetNameFont = (s.nameFont && s.nameFont !== 'inherit') ? s.nameFont : (s.bodyFont || '');
+  return {
+    '--cv-paper-w':       isLetter ? '215.9mm' : '210mm',
+    '--cv-paper-h':       isLetter ? '279.4mm' : '297mm',
+    '--cv-accent':        s.accentColor || '#1a1a1a',
+    '--cv-base':          (s.baseFontSize || 11)    + 'px',
+    '--cv-name-size':     (s.nameFontSize || 19)    + 'px',
+    '--cv-name-font':     targetNameFont,
+    '--cv-title-size':    (s.titleFontSize || 12)   + 'px',
+    '--cv-heading-size':  (s.headingFontSize || 10) + 'px',
+    '--cv-entry-size':    (s.entryFontSize || 11)   + 'px',
+    '--cv-section-gap':   (s.sectionSpacing || 11)  + 'px',
+    '--cv-margin-lr':     (s.marginLR || 13)        + 'mm',
+    '--cv-margin-tb':     (s.marginTB || 11)        + 'mm',
+    '--cv-letter-spacing':(s.letterSpacing || 0)    + 'em',
+    '--cv-col-width':     (s.twoColWidth || 32)     + '%',
+    '--cv-bg':            s.colorBg || '#ffffff',
+    '--cv-sidebar-bg':    s.sidebarBgEnabled ? (s.colorSidebarBg || '#f0f4f8') : 'transparent',
+    '--cv-text':          s.colorText || '#1a1a1a',
+    '--cv-photo-zoom':    s.photoZoom || 1,
+  };
+}
+
+function computeCvPageStyleAttr(settings) {
+  const s = settings || cvSettings || {};
+  const props = getCvStyleProps(s);
+  props['font-family']    = s.bodyFont || 'Calibri, Arial, sans-serif';
+  props['line-height']    = s.lineHeight || 1.55;
+  props['letter-spacing'] = (s.letterSpacing || 0) + 'em';
+  props['color']          = s.colorText || '#1a1a1a';
+  props['background']     = s.colorBg || '#ffffff';
+  return Object.entries(props).map(([k, v]) => `${k}:${v}`).join(';');
+}
+
+async function ensureFontsReady() {
+  if (!(document.fonts && document.fonts.load)) return;
+  const stacks = [cvSettings && cvSettings.bodyFont, cvSettings && cvSettings.nameFont].filter(f => f && f !== 'inherit');
+  const specs = [];
+  stacks.forEach(stack => {
+    const primaryFamily = stack.split(',')[0].trim().replace(/^['"]|['"]$/g, '');
+    specs.push(
+      `300 16px "${primaryFamily}"`,
+      `400 16px "${primaryFamily}"`,
+      `600 16px "${primaryFamily}"`,
+      `700 16px "${primaryFamily}"`,
+      `800 16px "${primaryFamily}"`,
+      `italic 400 16px "${primaryFamily}"`,
+      `italic 700 16px "${primaryFamily}"`
+    );
+  });
+  try {
+    await Promise.all(specs.map(spec => document.fonts.load(spec).catch(() => {})));
+    await document.fonts.ready;
+  } catch { /* best-effort */ }
+}
+
+const PAGE_FIT_TOLERANCE_MM = 1;
+const BANNER_TEMPLATES = ['hunter-green', 'corporate', 'silver-banner', 'blue-steel', 'clear-banner'];
+
+function getPaginationMode() {
+  if (SIDEBAR_TEMPLATES.includes(cvSettings.template)) return 'sidebar';
+  const colMode = String(cvSettings.columns);
+  if (colMode === '1') return 'single';
+  if (colMode === '2') return 'twocol';
+  return 'flowing';
+}
+
+function isPaginatedLayout() {
+  return getPaginationMode() !== 'flowing';
+}
+
+function htmlToTopLevelNodes(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  return Array.from(tmp.children);
+}
+
+function buildHeaderUnit(header, sections, variant) {
+  const contactHtml = buildContactHtml(header);
+
+  let headerTextInner = '';
+  const targetNameFont = (cvSettings.nameFont && cvSettings.nameFont !== 'inherit') ? cvSettings.nameFont : (cvSettings.bodyFont || '');
+  const isCursive = isCursiveOrDecorativeFont(targetNameFont);
+  const nameStyle = targetNameFont
+    ? ` style="font-family:${escapeAttr(targetNameFont)} !important;${isCursive ? 'text-transform:none !important;font-weight:400 !important;' : ''}"`
+    : '';
+  if (!cvData.hiddenFields['name'])     headerTextInner += `<div class="cvp-name"${nameStyle}>${mdLine(header.name||'')}</div>`;
+  if (!cvData.hiddenFields['jobTitle'] && header.jobTitle) headerTextInner += `<div class="cvp-jobtitle">${mdLine(header.jobTitle)}</div>`;
+  if (contactHtml) headerTextInner += `<div class="cvp-contact">${contactHtml}</div>`;
+  if (cvSettings.summaryInHeader) headerTextInner += getSummaryHtml(sections);
+  const photoHtmlUnits = buildPhotoHtml(header);
+  const headerInnerUnits = photoHtmlUnits
+    ? `<div class="cvp-header-row">${photoHtmlUnits}<div class="cvp-header-text">${headerTextInner}</div></div>`
+    : headerTextInner;
+
+  const headerHtml = variant === 'incolumn'
+    ? `<div class="cvp-header cvp-header-incolumn">${headerInnerUnits}</div>`
+    : variant === 'bare'
+    ? headerInnerUnits
+    : '<div class="cvp-header">' + headerInnerUnits + '</div><hr class="cvp-divider">';
+  return { html: headerHtml, sectionIndex: null, isHeading: false, isHeader: true };
+}
+
+function buildSectionUnits(sec, i, units, sectionMeta) {
+  const name = cvData.sectionNames[i] !== undefined ? cvData.sectionNames[i] : sec.title;
+  const def   = getSectionDef(sec, i);
+  const renderStype = getEffectiveStype(sec, i);
+  const skillClass = (renderStype === 'skills' || renderStype === 'custom-skill')
+    ? ` cvp-section-skill-${cvSettings.skillStyle || 'text'}` : '';
+  sectionMeta[i] = { name, skillClass };
+  units.push({ html: `<div class="cvp-sec-heading">${sectionHeadingInnerHTML(name, def.icon)}</div>`, sectionIndex: i, isHeading: true });
+
+  if (def && !def.useTextarea && sec.entries && sec.entries.length) {
+    sec.entries.filter(e => e.visible !== false).forEach(entry => {
+      const nodes = htmlToTopLevelNodes(renderEntryHTML(entry, renderStype));
+      let j = 0;
+      while (j < nodes.length) {
+        const node = nodes[j];
+        const next = nodes[j + 1];
+        if ((node.className || '').includes('cvp-entry-row1') && next && (next.className || '').includes('cvp-entry-row2')) {
+          units.push({ html: node.outerHTML + next.outerHTML, sectionIndex: i, isHeading: false });
+          j += 2;
+        } else {
+          units.push({ html: node.outerHTML, sectionIndex: i, isHeading: false });
+          j += 1;
+        }
+      }
+    });
+  } else {
+    htmlToTopLevelNodes(formatLines(sec.lines || [])).forEach(node => {
+      units.push({ html: node.outerHTML, sectionIndex: i, isHeading: false });
+    });
+  }
+}
+
+function buildLayoutUnits(parsed) {
+  const { header, sections } = parsed;
+  const units = [];
+  const sectionMeta = [];
+
+  units.push(buildHeaderUnit(header, sections));
+
+  sections.forEach((sec, i) => {
+    if ((sec.type || 'custom') === 'profile' && cvSettings.summaryInHeader) return;
+    buildSectionUnits(sec, i, units, sectionMeta);
+  });
+
+  return { units, sectionMeta };
+}
+
+function applyProbeStyles(probe, settings = cvSettings) {
+  if (typeof cvPaper !== 'undefined' && cvPaper && cvPaper.style && cvPaper.style.fontFamily) {
+    Array.from(cvPaper.style).forEach(prop => {
+      if (prop.startsWith('--')) probe.style.setProperty(prop, cvPaper.style.getPropertyValue(prop));
+    });
+    probe.style.fontFamily    = cvPaper.style.fontFamily;
+    probe.style.lineHeight    = cvPaper.style.lineHeight;
+    probe.style.letterSpacing = cvPaper.style.letterSpacing;
+    return;
+  }
+  const props = getCvStyleProps(settings);
+  Object.entries(props).forEach(([prop, val]) => probe.style.setProperty(prop, val));
+  probe.style.fontFamily    = (settings && settings.bodyFont) || 'Calibri, Arial, sans-serif';
+  probe.style.lineHeight    = settings && settings.lineHeight;
+  probe.style.letterSpacing = (settings && settings.letterSpacing ? settings.letterSpacing + 'em' : '0');
+}
+
+function measureAndPaginate(units, pw, ph, marginLR, marginTB, classString, sectionMeta) {
+  const probe = document.createElement('div');
+  probe.className = classString;
+  probe.style.cssText = 'position:fixed;top:0;left:-99999px;visibility:hidden;box-shadow:none;';
+  probe.style.width = probe.style.maxWidth = `${pw}mm`;
+  probe.style.minWidth = probe.style.minHeight = '0';
+  probe.style.height = 'auto';
+  applyProbeStyles(probe, cvSettings);
+  document.body.appendChild(probe);
+
+  const pxPerMm = probe.clientWidth / pw;
+  const usablePageHeightPx = ph * pxPerMm + PAGE_FIT_TOLERANCE_MM * pxPerMm;
+
+  const isBanner = BANNER_TEMPLATES.includes(cvSettings.template);
+  const pages = [[]];
+  units.forEach(u => {
+    const pageIdx = pages.length - 1;
+    const candidate = pages[pageIdx].concat([u]);
+    if (isBanner && pageIdx > 0) {
+      probe.style.paddingTop = `${marginTB}mm`;
+    } else {
+      probe.style.paddingTop = '';
+    }
+    probe.innerHTML = unitsToPageHTML(candidate, sectionMeta, pageIdx);
+    const h = probe.getBoundingClientRect().height;
+    if (h > usablePageHeightPx && pages[pageIdx].length > 0) {
+      pages.push([u]);
+    } else {
+      pages[pageIdx] = candidate;
+    }
+  });
+
+  for (let i = pages.length - 1; i > 0; i--) {
+    const combined = pages[i - 1].concat(pages[i]);
+    if (isBanner && (i - 1) > 0) {
+      probe.style.paddingTop = `${marginTB}mm`;
+    } else {
+      probe.style.paddingTop = '';
+    }
+    probe.innerHTML = unitsToPageHTML(combined, sectionMeta, i - 1);
+    const combinedHeight = probe.getBoundingClientRect().height;
+    if (combinedHeight <= usablePageHeightPx) {
+      pages[i - 1] = combined;
+      pages.splice(i, 1);
+    }
+  }
+
+  document.body.removeChild(probe);
+  return pages;
+}
+
+function unitsToPageHTML(pageUnits, sectionMeta, pageIdx) {
+  let html = '';
+  let i = 0;
+  while (i < pageUnits.length) {
+    const u = pageUnits[i];
+    if (u.isHeader) { html += u.html; i++; continue; }
+    const secIdx = u.sectionIndex;
+    let headingHtml = '';
+    let bodyHtml = '';
+    while (i < pageUnits.length && pageUnits[i].sectionIndex === secIdx) {
+      const gu = pageUnits[i];
+      if (gu.isHeading) headingHtml = gu.html;
+      else bodyHtml += gu.html;
+      i++;
+    }
+    const isContinuation = !headingHtml;
+    const idSuffix = isContinuation ? `-p${pageIdx}` : '';
+    const skillClass = (sectionMeta && sectionMeta[secIdx] && sectionMeta[secIdx].skillClass) || '';
+    html += `<div class="cvp-section${skillClass}" id="preview-sec-${secIdx}${idSuffix}">
+      ${headingHtml}
+      <div class="cvp-sec-content" id="preview-content-${secIdx}${idSuffix}">${bodyHtml}</div>
+    </div>`;
+  }
+  return html;
+}
+
+function paginateSingleColumn(parsed) {
+  const isLetter = cvSettings.paperFormat === 'Letter';
+  const [pw, ph] = isLetter ? [215.9, 279.4] : [210, 297];
+  const classString = computeCvPaperClassString(true);
+
+  const { units, sectionMeta } = buildLayoutUnits(parsed);
+  const pages = measureAndPaginate(units, pw, ph, cvSettings.marginLR, cvSettings.marginTB, classString, sectionMeta);
+
+  const sectionPageCount = {};
+  pages.forEach(pageUnits => {
+    const seen = new Set(pageUnits.map(u => u.sectionIndex).filter(idx => idx !== null));
+    seen.forEach(idx => { sectionPageCount[idx] = (sectionPageCount[idx] || 0) + 1; });
+  });
+  const multiPageSections = new Set(Object.keys(sectionPageCount).filter(k => sectionPageCount[k] > 1).map(Number));
+
+  const pageHtmls = pages.map((pageUnits, pageIdx) => unitsToPageHTML(pageUnits, sectionMeta, pageIdx));
+  return { pageHtmls, classString, multiPageSections };
+}
+
+function measureColumnAndPaginate(units, pw, ph, marginTB, classString, sectionMeta, column) {
+  const probe = document.createElement('div');
+  probe.className = classString;
+  probe.style.cssText = 'position:fixed;top:0;left:-99999px;visibility:hidden;box-shadow:none;';
+  probe.style.width = probe.style.maxWidth = `${pw}mm`;
+  probe.style.minWidth = probe.style.minHeight = '0';
+  probe.style.height = 'auto';
+  applyProbeStyles(probe, cvSettings);
+  document.body.appendChild(probe);
+
+  const pxPerMm = probe.clientWidth / pw;
+  const usablePageHeightPx = (ph - marginTB * 2) * pxPerMm + PAGE_FIT_TOLERANCE_MM * pxPerMm;
+  const colClass      = column === 'sidebar' ? 'cv-sidebar-col' : 'cv-main-col';
+  const otherColClass = column === 'sidebar' ? 'cv-main-col'    : 'cv-sidebar-col';
+
+  const pages = [[]];
+  units.forEach(u => {
+    const pageIdx = pages.length - 1;
+    const candidate = pages[pageIdx].concat([u]);
+    probe.innerHTML = `<div class="cv-two-col-wrap"><div class="${colClass}">${unitsToPageHTML(candidate, sectionMeta, pageIdx)}</div><div class="${otherColClass}"></div></div>`;
+    const h = probe.querySelector('.' + colClass).getBoundingClientRect().height;
+    if (h > usablePageHeightPx && pages[pageIdx].length > 0) {
+      pages.push([u]);
+    } else {
+      pages[pageIdx] = candidate;
+    }
+  });
+
+  for (let i = pages.length - 1; i > 0; i--) {
+    const combined = pages[i - 1].concat(pages[i]);
+    probe.innerHTML = `<div class="cv-two-col-wrap"><div class="${colClass}">${unitsToPageHTML(combined, sectionMeta, i - 1)}</div><div class="${otherColClass}"></div></div>`;
+    const combinedHeight = probe.querySelector('.' + colClass).getBoundingClientRect().height;
+    if (combinedHeight <= usablePageHeightPx) {
+      pages[i - 1] = combined;
+      pages.splice(i, 1);
+    }
+  }
+
+  document.body.removeChild(probe);
+  return pages;
+}
+
+function paginateTwoColumn(parsed) {
+  const { header, sections } = parsed;
+  const isLetter = cvSettings.paperFormat === 'Letter';
+  const [pw, ph] = isLetter ? [215.9, 279.4] : [210, 297];
+  const classString = computeCvPaperClassString(true);
+
+  const headerPos = cvSettings.headerPosition || 'top';
+  const headerInColumn = headerPos === 'left' || headerPos === 'right';
+
+  const sidebarUnits = [];
+  const mainUnits = [];
+  const sectionMeta = [];
+  if (headerInColumn) {
+    const headerUnit = buildHeaderUnit(header, sections, 'incolumn');
+    (headerPos === 'left' ? sidebarUnits : mainUnits).push(headerUnit);
+  }
+  sections.forEach((sec, i) => {
+    if ((sec.type || 'custom') === 'profile' && cvSettings.summaryInHeader) return;
+    const target = cvData.columnAssign[i] === 'sidebar' ? sidebarUnits : mainUnits;
+    buildSectionUnits(sec, i, target, sectionMeta);
+  });
+
+  const sidebarPages = measureColumnAndPaginate(sidebarUnits, pw, ph, cvSettings.marginTB, classString, sectionMeta, 'sidebar');
+  const mainPages    = measureColumnAndPaginate(mainUnits,    pw, ph, cvSettings.marginTB, classString, sectionMeta, 'main');
+
+  const sectionPageCount = {};
+  [...sidebarPages, ...mainPages].forEach(pageUnits => {
+    const seen = new Set(pageUnits.map(u => u.sectionIndex).filter(idx => idx !== null));
+    seen.forEach(idx => { sectionPageCount[idx] = (sectionPageCount[idx] || 0) + 1; });
+  });
+  const multiPageSections = new Set(Object.keys(sectionPageCount).filter(k => sectionPageCount[k] > 1).map(Number));
+
+  const topHeaderHtml = headerInColumn ? '' : buildHeaderUnit(header, sections).html;
+  const pageCount = Math.max(sidebarPages.length, mainPages.length, 1);
+  const pageHtmls = [];
+  for (let k = 0; k < pageCount; k++) {
+    const sidebarHtml = sidebarPages[k] ? unitsToPageHTML(sidebarPages[k], sectionMeta, k) : '';
+    const mainHtml    = mainPages[k]    ? unitsToPageHTML(mainPages[k],    sectionMeta, k) : '';
+    let html = (k === 0 && topHeaderHtml) ? topHeaderHtml : '';
+    const isSidebarRight = cvSettings.sidebarPosition === 'right';
+    const sidebarCol = `<div class="cv-sidebar-col">${sidebarHtml}</div>`;
+    const mainCol    = `<div class="cv-main-col">${mainHtml}</div>`;
+    html += `<div class="cv-two-col-wrap">${isSidebarRight ? (mainCol + sidebarCol) : (sidebarCol + mainCol)}</div>`;
+    pageHtmls.push(html);
+  }
+
+  return { pageHtmls, classString, multiPageSections };
+}
+
+function sidebarPanelPageHTML(pageUnits, sectionMeta, pageIdx, header) {
+  const hasHeaderUnit = pageUnits[0] && pageUnits[0].isHeader;
+  const headerHtml = hasHeaderUnit ? pageUnits[0].html : '';
+  const bodyUnits  = hasHeaderUnit ? pageUnits.slice(1) : pageUnits;
+  const sectionsHtml = unitsToPageHTML(bodyUnits, sectionMeta, pageIdx);
+  const targetNameFont = (cvSettings.nameFont && cvSettings.nameFont !== 'inherit') ? cvSettings.nameFont : (cvSettings.bodyFont || '');
+  const isCursive = isCursiveOrDecorativeFont(targetNameFont);
+  const nameStyle = targetNameFont
+    ? ` style="font-family:${escapeAttr(targetNameFont)} !important;${isCursive ? 'text-transform:none !important;font-weight:400 !important;' : ''}"`
+    : '';
+  const continuationStrip = (!hasHeaderUnit && !cvData.hiddenFields['name'])
+    ? `<div class="cvp-name cvp-header-continuation"${nameStyle}>${mdLine(header.name || '')}</div>` : '';
+  return `<div class="cvp-header">${headerHtml}${continuationStrip}<div class="cvp-header-sections">${sectionsHtml}</div></div>`;
+}
+
+function measureSidebarPanelAndPaginate(units, pw, ph, classString, sectionMeta, header) {
+  const probe = document.createElement('div');
+  probe.className = classString;
+  probe.style.cssText = 'position:fixed;top:0;left:-99999px;visibility:hidden;box-shadow:none;';
+  probe.style.width = probe.style.maxWidth = `${pw}mm`;
+  probe.style.minWidth = probe.style.minHeight = '0';
+  probe.style.height = 'auto';
+  applyProbeStyles(probe, cvSettings);
+  document.body.appendChild(probe);
+
+  const pxPerMm = probe.clientWidth / pw;
+  const usablePageHeightPx = ph * pxPerMm + PAGE_FIT_TOLERANCE_MM * pxPerMm;
+
+  const pages = [[]];
+  units.forEach(u => {
+    const pageIdx = pages.length - 1;
+    const candidate = pages[pageIdx].concat([u]);
+    probe.innerHTML = sidebarPanelPageHTML(candidate, sectionMeta, pageIdx, header);
+    const h = probe.querySelector('.cvp-header').getBoundingClientRect().height;
+    if (h > usablePageHeightPx && pages[pageIdx].length > 0) {
+      pages.push([u]);
+    } else {
+      pages[pageIdx] = candidate;
+    }
+  });
+  document.body.removeChild(probe);
+  return pages;
+}
+
+function measureSidebarMainAndPaginate(units, pw, ph, classString, sectionMeta) {
+  const probe = document.createElement('div');
+  probe.className = classString;
+  probe.style.cssText = 'position:fixed;top:0;left:-99999px;visibility:hidden;box-shadow:none;';
+  probe.style.width = probe.style.maxWidth = `${pw}mm`;
+  probe.style.minWidth = probe.style.minHeight = '0';
+  probe.style.height = 'auto';
+  applyProbeStyles(probe, cvSettings);
+  document.body.appendChild(probe);
+
+  const pxPerMm = probe.clientWidth / pw;
+  const usablePageHeightPx = ph * pxPerMm + PAGE_FIT_TOLERANCE_MM * pxPerMm;
+
+  const pages = [[]];
+  units.forEach(u => {
+    const pageIdx = pages.length - 1;
+    const candidate = pages[pageIdx].concat([u]);
+    probe.innerHTML = unitsToPageHTML(candidate, sectionMeta, pageIdx);
+    const h = probe.getBoundingClientRect().height;
+    if (h > usablePageHeightPx && pages[pageIdx].length > 0) {
+      pages.push([u]);
+    } else {
+      pages[pageIdx] = candidate;
+    }
+  });
+  document.body.removeChild(probe);
+  return pages;
+}
+
+function paginateSidebarTemplate(parsed) {
+  const { header, sections } = parsed;
+  const isLetter = cvSettings.paperFormat === 'Letter';
+  const [pw, ph] = isLetter ? [215.9, 279.4] : [210, 297];
+  const classString = computeCvPaperClassString(true);
+
+  const panelUnits = [buildHeaderUnit(header, sections, 'bare')];
+  const mainUnits = [];
+  const sectionMeta = [];
+  sections.forEach((sec, i) => {
+    if ((sec.type || 'custom') === 'profile' && cvSettings.summaryInHeader) return;
+    const target = cvData.columnAssign[i] === 'sidebar' ? panelUnits : mainUnits;
+    buildSectionUnits(sec, i, target, sectionMeta);
+  });
+
+  const panelPages = measureSidebarPanelAndPaginate(panelUnits, pw, ph, classString, sectionMeta, header);
+  const mainPages  = measureSidebarMainAndPaginate(mainUnits, pw, ph, classString, sectionMeta);
+
+  const sectionPageCount = {};
+  [...panelPages, ...mainPages].forEach(pageUnits => {
+    const seen = new Set(pageUnits.map(u => u.sectionIndex).filter(idx => idx !== null));
+    seen.forEach(idx => { sectionPageCount[idx] = (sectionPageCount[idx] || 0) + 1; });
+  });
+  const multiPageSections = new Set(Object.keys(sectionPageCount).filter(k => sectionPageCount[k] > 1).map(Number));
+
+  const pageCount = Math.max(panelPages.length, mainPages.length, 1);
+  const pageHtmls = [];
+  for (let k = 0; k < pageCount; k++) {
+    const panelHtml = sidebarPanelPageHTML(panelPages[k] || [], sectionMeta, k, header);
+    const mainHtml  = mainPages[k] ? unitsToPageHTML(mainPages[k], sectionMeta, k) : '';
+    pageHtmls.push(panelHtml + mainHtml);
+  }
+
+  return { pageHtmls, classString, multiPageSections };
+}
+
+async function buildBackendExportPayload() {
+  await ensureFontsReady();
+  const paginated = isPaginatedLayout();
+  let exportHTML = '';
+  if (paginated) {
+    if (typeof cvPaper !== 'undefined' && cvPaper && cvPaper.querySelector('.cv-page')) {
+      const clone = cvPaper.cloneNode(true);
+      clone.querySelectorAll('.cv-page-badge').forEach(b => b.remove());
+      exportHTML = clone.innerHTML;
+    } else {
+      const mode = getPaginationMode();
+      const { pageHtmls } =
+        mode === 'single' ? paginateSingleColumn(cvData.parsed || {}) :
+        mode === 'twocol' ? paginateTwoColumn(cvData.parsed || {}) :
+        paginateSidebarTemplate(cvData.parsed || {});
+      const classString = computeCvPaperClassString(true);
+      const pageStyleAttr = computeCvPageStyleAttr(cvSettings);
+      exportHTML = pageHtmls.map((h, idx) =>
+        `<div class="cv-page ${classString}" id="cvPage-${idx + 1}" data-page="${idx + 1}" style="${pageStyleAttr}">${h}</div>`
+      ).join('');
+    }
+  } else {
+    exportHTML = buildCVHTML((cvData && cvData.parsed) || {});
+  }
+
+  const isLetterFormat = cvSettings.paperFormat === 'Letter';
+  const fallbackStyleAttr = `width:${isLetterFormat ? '215.9mm' : '210mm'};min-height:${isLetterFormat ? '279.4mm' : '297mm'};` +
+    `background:${cvSettings.colorBg};color:${cvSettings.colorText};font-family:${cvSettings.bodyFont};` +
+    `font-size:${cvSettings.baseFontSize}px;line-height:${cvSettings.lineHeight};letter-spacing:${cvSettings.letterSpacing}em;` +
+    `box-sizing:border-box;` +
+    computeCvPageStyleAttr(cvSettings);
+
+  const styleAttr = (typeof cvPaper !== 'undefined' && cvPaper && cvPaper.getAttribute('style')) || fallbackStyleAttr;
+
+  return {
+    outerClassName: computeCvPaperClassString(false),
+    styleAttr,
+    innerHTML: exportHTML,
+    isPaginated: paginated,
+    paperFormat: cvSettings.paperFormat === 'Letter' ? 'Letter' : 'A4',
+    filename: (cvData && cvData.name) || 'CV',
+    marginLR: cvSettings.marginLR,
+    marginTB: cvSettings.marginTB,
+    colorBg: cvSettings.colorBg,
+  };
+}
